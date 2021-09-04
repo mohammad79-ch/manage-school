@@ -17,12 +17,16 @@ Route::get('/', function () {
 
 Auth::routes();
 
-Route::get('/home', 'HomeController@index')->name('home')->middleware('auth');
+Route::group(['middleware'=>'auth'],function (){
+
+Route::get('/home', 'HomeController@index')->name('home');
 Route::get('/profile', 'HomeController@profile')->name('profile');
 Route::get('/profile/edit', 'HomeController@profileEdit')->name('profile.edit');
 Route::put('/profile/update', 'HomeController@profileUpdate')->name('profile.update');
 Route::get('/profile/changepassword', 'HomeController@changePasswordForm')->name('profile.change.password');
 Route::post('/profile/changepassword', 'HomeController@changePassword')->name('profile.changepassword');
+
+});
 
 Route::group(['middleware' => ['auth','role:Admin']], function ()
 {
@@ -61,6 +65,6 @@ Route::group(['middleware' => ['auth','role:Parent']], function ()
     Route::get('attendance/{attendance}', 'AttendanceController@show')->name('attendance.show');
 });
 
-Route::group(['middleware' => ['auth','role:Student']], function () {
-
-});
+//Route::group(['middleware' => ['auth','role:Student']], function () {
+//
+//});

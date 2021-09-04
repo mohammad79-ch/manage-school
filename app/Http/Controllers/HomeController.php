@@ -73,25 +73,16 @@ class HomeController extends Controller
 
     public function profileUpdate(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . auth()->id()
-        ]);
+        $this->validateUserProfle($request);
 
         if ($request->hasFile('profile_picture')) {
-            $profile = Str::slug(auth()->user()->name) . '-' . auth()->id() . '.' . $request->profile_picture->getClientOriginalExtension();
+            $profile = Str::random(8) . '_' . $request->profile_picture->getClientOriginalExtension();
             $request->profile_picture->move(public_path('images/profile'), $profile);
         } else {
             $profile = 'avatar.png';
         }
 
-        $user = auth()->user();
-
-        $user->update([
-            'name' => $request->name,
-            'email' => $request->email,
-            'profile_picture' => $profile
-        ]);
+        $this->UserUpdateProfile($request, $profile);
 
         return redirect()->route('profile');
     }
@@ -117,17 +108,49 @@ class HomeController extends Controller
             ]);
         }
 
+        $this->validateUserPass($request);
+
+        Auth::user()->update([
+            'password' => bcrypt($request->get('newpassword'))
+        ]);
+
+        Auth::logout();
+        return redirect()->route('login');
+    }
+
+    /**
+     * @param Request $request
+     * @param string $profile
+     */
+    protected function UserUpdateProfile(Request $request, string $profile): void
+    {
+        auth()->user()->update([
+            'name' => $request->name,
+            'email' => $request->email,
+            'profile_picture' => $profile
+        ]);
+    }
+
+    /**
+     * @param Request $request
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    protected function validateUserPass(Request $request): void
+    {
         $this->validate($request, [
             'currentpassword' => 'required',
             'newpassword' => 'required|string|min:8|confirmed',
         ]);
+    }
 
-        $user = Auth::user();
-
-        $user->password = bcrypt($request->get('newpassword'));
-        $user->save();
-
-        Auth::logout();
-        return redirect()->route('login');
+    /**
+     * @param Request $request
+     */
+    protected function validateUserProfle(Request $request): void
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . auth()->id()
+        ]);
     }
 }
